@@ -181,3 +181,13 @@
   z-index: 200;
   cursor: pointer;
 }
+
+/* Écran de connexion (premier lancement) */
+.setup-card { border: 1px solid var(--border, rgba(255,255,255,.1)); border-radius: 12px; padding: 12px 14px; margin: 10px 0; background: rgba(255,255,255,.03); }
+.setup-card.ok { border-color: rgba(48, 209, 88, .4); }
+.setup-head { display: flex; align-items: center; gap: 12px; }
+.setup-ico { font-size: 26px; }
+.setup-name { font-weight: 700; font-size: 14px; }
+.setup-actions { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+.btn[disabled] { opacity: .45; pointer-events: none; }
+.setup-actions .btn { white-space: nowrap; flex-shrink: 0; }

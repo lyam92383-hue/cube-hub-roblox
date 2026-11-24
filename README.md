@@ -19,6 +19,10 @@ npm install
 npx electron .
 ```
 
+## Premier lancement : connexion
+
+Au premier lancement, Cube Hub ouvre l'écran **Connexion de l'équipe** : tu te connectes à **ton compte Claude Code** et à **ton compte Codex** (ChatGPT / OpenAI). Chaque bouton ouvre la commande officielle (installation, puis connexion dans ton navigateur) ; Cube Hub ne voit jamais tes mots de passe et vérifie seulement que c'est fait. Tu peux y revenir dans Réglages → Équipe IA.
+
 ## Créer un jeu
 
 Bouton **Nouveau jeu Roblox** (ou Ctrl+N) : nom, genre, pitch. Cube Hub crée :

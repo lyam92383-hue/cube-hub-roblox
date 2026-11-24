@@ -3,6 +3,7 @@
 import { Cube, CUBE_CSS, COLORS, loadFrames } from './common/cube.js';
 import { play, configureSounds } from './common/sounds.js';
 import { LONG, SHORT, duration, tokens, escapeHTML } from './common/format.js';
+import { initSetup } from './setup.js';
 import { initTeam, renderTabs, renderTeamPanel, openWizard, pageTeam, rowHint, openBrain, loadHistory } from './team.js';
 
 const $ = (id) => document.getElementById(id);
@@ -42,6 +43,7 @@ window.cube.on('init', async (data) => {
   render();
   setInterval(render, 30_000);
   ready = true;
+  setTimeout(() => setup.check(), 1200);
   queued.splice(0).forEach(runCommand);
 });
 window.cube.on('sessions', (list) => {
@@ -85,6 +87,7 @@ function runCommand(cmd) {
   }
   if (cmd.debugTab) { tabs.set(cmd.debugTab.id, cmd.debugTab.tab); render(); }
   if (cmd.debugWizard) openWizard();
+  if (cmd.debugSetup) setup.preview({ claude: { found: true, loggedIn: false }, codex: { found: false, loggedIn: false } });
   if (cmd.debugCloseWizard) $('wizard').hidden = true;
   if (cmd.debugTheme) {
     hubState().themes.push({ id: uid(), name: cmd.debugTheme, color: THEME_COLORS[0], collapsed: false });
@@ -774,7 +777,9 @@ function toast(msg) {
 $('toast').onclick = () => { $('toast').hidden = true; };
 
 let teamRenderPending = false;
+const setup = initSetup({ settings: () => settings, toast });
 initTeam({
+  openSetup: () => setup.open(),
   settings: () => settings,
   uid,
   toast,

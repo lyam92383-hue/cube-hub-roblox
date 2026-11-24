@@ -17,6 +17,7 @@ const defaults = () => ({
   // V2 : l'équipe IA des projets Roblox.
   team: {
     vault: path.join(os.homedir(), 'Documents', 'Cerveau Roblox'),
+    setupDone: false, // l'écran « Connexion » (Claude Code + Codex) a été fait ou passé
     gamesDir: path.join(os.homedir(), 'Documents', 'Jeux Roblox'),
     llm: { enabled: false, url: 'http://localhost:11434/v1', key: '', model: '', maxTokens: 2048 },
     codex: { enabled: true, command: 'codex', sandbox: 'workspace-write', model: '', timeoutMin: 15 },

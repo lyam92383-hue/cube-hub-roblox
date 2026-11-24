@@ -362,6 +362,9 @@ export async function pageTeam(el, rerender) {
       pour économiser des tokens, 🎨 Blender et 🎮 Roblox Studio sont pilotés par MCP, 🧠 le cerveau Obsidian garde tout bien rangé.</p>
 
     <div class="group">
+      <div class="line"><div class="l-label">🔑 Connexion Claude Code + Codex<div class="l-sub">Claude : ${d.claude.loggedIn ? 'connecté' : 'non connecté'} · Codex : ${d.codex.loggedIn ? 'connecté' : 'non connecté'}</div></div><button class="btn" id="tSetup">Ouvrir</button></div>
+    </div>
+    <div class="group">
       <div class="line"><div class="l-label">👑 Claude Code<div class="l-sub">${d.claude.found ? escapeHTML(d.claude.path) : 'Installe-le : irm https://claude.ai/install.ps1 | iex'}</div></div>${badge(d.claude.found, 'Installé', 'Absent')}</div>
       <div class="line"><div class="l-label">Node.js<div class="l-sub">${d.node.found ? 'Lance le serveur de l\'équipe et le témoin Blender/Studio.' : 'Absent : le serveur de l\'équipe utilisera Electron (le témoin Blender/Studio sera coupé). nodejs.org'}</div></div>${badge(d.node.found, 'Installé', 'Absent')}</div>
       <div class="line"><div class="l-label">🔄 Rojo<div class="l-sub">${d.rojo.found ? 'Synchronise les fichiers .luau avec Studio (onglet Rojo).' : 'Pour synchroniser le code avec Studio : rojo.space (+ plugin Rojo dans Studio).'}</div></div>${badge(d.rojo.found, 'Installé', 'Absent')}</div>
@@ -418,6 +421,7 @@ export async function pageTeam(el, rerender) {
   };
   $('tVault').onclick = async () => { const p = await window.cube.invoke('team:pick-vault'); if (p) { t.vault = p; await save({ vault: p }); rerender(); } };
   $('tVaultOpen').onclick = () => openBrain(null);
+  $('tSetup').onclick = () => ctx.openSetup();
   $('tGames').onclick = async () => { const p = await window.cube.invoke('team:pick-parent'); if (p) { t.gamesDir = p; await save({ gamesDir: p }); rerender(); } };
   $('tCodex').onchange = (e) => { t.codex.enabled = e.target.checked; save({ codex: t.codex }); };
   $('tSandbox').onchange = (e) => { t.codex.sandbox = e.target.value; save({ codex: t.codex }); };

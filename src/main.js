@@ -189,6 +189,9 @@ async function snapshots(dir) {
   hub.webContents.send('hub:command', { debugWizard: true });
   await wait(2500);
   await shot(hub, 'v2-assistant.png');
+  hub.webContents.send('hub:command', { debugSetup: true });
+  await wait(800);
+  await shot(hub, 'v2-connexion.png');
   hub.webContents.send('hub:command', { debugCloseWizard: true, settings: true, settingsPage: 'team' });
   await wait(3000);
   await shot(hub, 'v2-reglages-equipe.png');
@@ -722,6 +725,23 @@ ipcMain.handle('team:detect', async () => {
   if (!nodePath) nodePath = await detect.where('node');
   return detect.detectAll(state().team);
 });
+// Écran « Connexion » : ouvre une vraie fenêtre PowerShell pour installer ou se connecter.
+// Seules ces quatre commandes sont possibles ; la connexion se fait dans le navigateur, par l'utilisateur.
+const SETUP_SCRIPTS = {
+  'claude-install': ['Installation de Claude Code', 'irm https://claude.ai/install.ps1 | iex'],
+  'claude-login': ['Connexion a Claude Code : choisis ton compte dans le navigateur, puis tape /exit', 'claude'],
+  'codex-install': ['Installation de Codex', 'npm i -g @openai/codex'],
+  'codex-login': ['Connexion a Codex : valide dans le navigateur', 'codex login'],
+};
+ipcMain.handle('team:setup-run', (_e, what) => {
+  const s = SETUP_SCRIPTS[what];
+  if (!s) return false;
+  const extra = detect.extraPath().map((d) => "'" + d + "'").join(',');
+  const script = "$env:Path += ';' + (@(" + extra + ") -join ';'); Write-Host '" + s[0] + "' -ForegroundColor Cyan; Write-Host ''; " + s[1] + "; Write-Host ''; Write-Host 'Termine. Tu peux fermer cette fenetre et revenir dans Cube Hub.' -ForegroundColor Green";
+  spawn('cmd.exe', ['/c', 'start', '', 'powershell.exe', '-NoLogo', '-NoExit', '-ExecutionPolicy', 'Bypass', '-Command', script], { detached: true, stdio: 'ignore' }).unref();
+  return true;
+});
+
 ipcMain.handle('team:llm-test', (_e, llm) => detect.llmCheck(llm || state().team.llm));
 
 ipcMain.handle('team:pick-parent', async () => {
@@ -843,7 +863,7 @@ ipcMain.handle('term:start', (_e, { projectId, folder, cols, rows, resume, agent
   try {
     p = pty().spawn('powershell.exe', ['-NoLogo', '-NoExit', '-Command', script], {
       name: 'xterm-256color', cols: cols || 100, rows: rows || 30, cwd: folder,
-      env: { ...process.env, CUBE_HUB_PROJECT: baseId, FORCE_COLOR: '1' },
+      env: { ...process.env, PATH: [process.env.PATH, ...detect.extraPath()].join(';'), CUBE_HUB_PROJECT: baseId, FORCE_COLOR: '1' },
       useConpty: true,
     });
   } catch (e) {

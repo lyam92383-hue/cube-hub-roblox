@@ -22,6 +22,23 @@ function where(cmd) {
 
 const firstExisting = (list) => list.find((p) => p && fs.existsSync(p)) || null;
 
+// Où Claude Code et Codex s'installent : ces dossiers ne sont pas toujours dans le PATH
+// de l'app tant qu'elle n'a pas été relancée.
+const CLAUDE_BIN = path.join(os.homedir(), '.local', 'bin');
+const NPM_BIN = path.join(ROAMING, 'npm');
+const extraPath = () => [CLAUDE_BIN, NPM_BIN].filter((d) => fs.existsSync(d));
+
+// Connecté = les identifiants existent (jamais lus ni envoyés : on vérifie seulement leur présence).
+function claudeLoggedIn() {
+  if (process.env.ANTHROPIC_API_KEY) return true;
+  if (fs.existsSync(path.join(os.homedir(), '.claude', '.credentials.json'))) return true;
+  try { return !!JSON.parse(fs.readFileSync(path.join(os.homedir(), '.claude.json'), 'utf8')).oauthAccount; } catch { return false; }
+}
+function codexLoggedIn() {
+  if (process.env.OPENAI_API_KEY) return true;
+  try { return fs.statSync(path.join(os.homedir(), '.codex', 'auth.json')).size > 2; } catch { return false; }
+}
+
 function blenderExe() {
   const base = path.join(PF, 'Blender Foundation');
   try {
@@ -72,13 +89,15 @@ async function llmCheck(llm) {
 }
 
 async function detectAll(team) {
-  const [claude, codex, node, rojo, uvx] = await Promise.all(['claude', 'codex', 'node', 'rojo', 'uvx'].map(where));
+  let [claude, codex, node, rojo, uvx] = await Promise.all(['claude', 'codex', 'node', 'rojo', 'uvx'].map(where));
+  claude = claude || firstExisting([path.join(CLAUDE_BIN, 'claude.exe')]);
+  codex = codex || firstExisting([path.join(NPM_BIN, 'codex.cmd')]);
   const robloxMcp = firstExisting([path.join(LOCAL, 'Roblox', 'mcp.bat')]);
   const ob = obsidianInfo(team.vault);
   const llm = team.llm?.enabled ? await llmCheck(team.llm) : { ok: false, error: 'désactivé', models: [] };
   return {
-    claude: { found: !!claude, path: claude },
-    codex: { found: !!codex, path: codex },
+    claude: { found: !!claude, path: claude, loggedIn: claudeLoggedIn() },
+    codex: { found: !!codex, path: codex, loggedIn: codexLoggedIn() },
     node: { found: !!node, path: node },
     rojo: { found: !!rojo, path: rojo },
     uvx: { found: !!uvx, path: uvx },
@@ -89,4 +108,4 @@ async function detectAll(team) {
   };
 }
 
-module.exports = { detectAll, llmCheck, where, blenderExe, studioExe, obsidianInfo, LOCAL };
+module.exports = { extraPath, detectAll, llmCheck, where, blenderExe, studioExe, obsidianInfo, LOCAL };
