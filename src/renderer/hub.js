@@ -4,6 +4,7 @@ import { Cube, CUBE_CSS, COLORS, loadFrames } from './common/cube.js';
 import { play, configureSounds } from './common/sounds.js';
 import { LONG, SHORT, duration, tokens, escapeHTML } from './common/format.js';
 import { initSetup } from './setup.js';
+import { pagePhone } from './phone.js';
 import { initTeam, renderTabs, renderTeamPanel, openWizard, pageTeam, rowHint, openBrain, loadHistory } from './team.js';
 
 const $ = (id) => document.getElementById(id);
@@ -863,6 +864,7 @@ const PAGES = [
   { id: 'notifications', label: 'Notifications', color: '#FF375F', icon: '<path d="M6 13V9a4 4 0 0 1 8 0v4l1.5 2h-11z"/><path d="M8.5 17h3"/>' },
   { id: 'telegram', label: 'Telegram', color: '#2AABEE', icon: '<path d="M3.5 9.5l12-5-2 11-4-3-2 3v-4l6-5"/>' },
   { id: 'team', label: 'Équipe IA', color: '#D97757', icon: '<circle cx="7" cy="8" r="2.2"/><circle cx="13" cy="8" r="2.2"/><path d="M3.5 15.5a3.5 3.5 0 0 1 7 0M9.5 15.5a3.5 3.5 0 0 1 7 0"/>' },
+  { id: 'phone', label: 'Téléphone', color: '#34C759', icon: '<rect x="6" y="3" width="8" height="14" rx="2"/><path d="M9 14.5h2"/>' },
   { id: 'hub', label: 'Cube Hub', color: '#30B0C7', icon: '<rect x="3.5" y="4" width="13" height="12" rx="2"/><path d="M8 4v12"/>' },
   { id: 'about', label: 'À propos', color: '#0A84FF', icon: '<circle cx="10" cy="10" r="6.5"/><path d="M10 9v4.5M10 6.5v.2"/>' },
 ];
@@ -887,7 +889,7 @@ function renderSettings() {
   const el = $('settingsPage');
   ({
     general: pageGeneral, widget: pageWidget, sounds: pageSounds, notifications: pageNotifications,
-    telegram: pageTelegram, hub: pageHub, about: pageAbout, team: (x) => pageTeam(x, renderSettings),
+    telegram: pageTelegram, hub: pageHub, about: pageAbout, team: (x) => pageTeam(x, renderSettings), phone: (x) => pagePhone(x, renderSettings, toast),
   })[page](el);
 }
 

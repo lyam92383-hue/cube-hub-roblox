@@ -19,7 +19,8 @@ const EVENTS = {
 };
 
 class Notifier {
-  constructor({ getSettings, onClick, log = () => {} }) {
+  constructor({ getSettings, onClick, push = null, log = () => {} }) {
+    this.push = push; // notifications du téléphone (ntfy)
     this.getSettings = getSettings;
     this.onClick = onClick;
     this.log = log;
@@ -75,6 +76,7 @@ class Notifier {
   }
 
   fire(type, s) {
+    if (this.push && (type === 'waiting' || type === 'done')) this.push.send(type, s, this.detail(type, s));
     const settings = this.getSettings();
     const n = settings.notifications || {};
     if (n.windows && n.windowsEvents?.[type]) this.toast(type, s);

@@ -18,9 +18,13 @@ const { Remote, LOG_FILE } = require('./remote');
 const scaffold = require('./team/scaffold');
 const detect = require('./team/detect');
 const { Activity } = require('./team/activity');
+const { PhoneServer } = require('./phone');
+const { Push } = require('./push');
 let notifier = null;
 let remote = null;
 let activity = null;
+let phoneServer = null;
+let pushService = null;
 let nodePath = null; // Node.js du PC, pour le serveur MCP de l'équipe (sinon Electron en mode Node)
 
 const ROOT = path.join(__dirname, '..');
@@ -76,12 +80,16 @@ app.whenReady().then(() => {
     if (hub && !hub.isDestroyed()) hub.webContents.send('team:events', { projectId, events });
   });
   activity.start();
+  phoneServer = new PhoneServer({ sessions: () => sessions, settings: state, save: () => stateStore.save(), log: console.error });
+  phoneServer.sync();
+  pushService = new Push({ settings: state, save: () => stateStore.save(), log: console.error });
   ensureStartMenuShortcut();
   createTray();
   createWidget();
 
   notifier = new Notifier({
     getSettings: state,
+    push: pushService,
     onClick: (s) => openHub({ selectSession: s.id }),
     log: console.error,
   });
@@ -195,6 +203,40 @@ async function snapshots(dir) {
   hub.webContents.send('hub:command', { debugCloseWizard: true, settings: true, settingsPage: 'team' });
   await wait(3000);
   await shot(hub, 'v2-reglages-equipe.png');
+  // Widget du téléphone : active le serveur, capture la page et interroge-le pour de vrai.
+  state().phone.enabled = true;
+  phoneServer.sync();
+  state().phone.push.enabled = true;
+  pushService.newTopic();
+  await wait(600);
+  hub.webContents.send('hub:command', { settings: true, settingsPage: 'phone' });
+  await wait(2500);
+  await shot(hub, 'v2-telephone.png');
+  const pi = phoneServer.info();
+  const host = pi.bindHost === '0.0.0.0' ? '127.0.0.1' : pi.bindHost;
+  try {
+    const bad = await fetch(`http://${host}:${pi.port}/api/status?t=faux`);
+    const good = await fetch(`http://${host}:${pi.port}/api/status?t=${state().phone.token}`);
+    fs.writeFileSync(path.join(dir, 'phone-status.json'), JSON.stringify({ sansCode: bad.status, avecCode: good.status, corps: await good.json() }, null, 1));
+  } catch (e) { fs.writeFileSync(path.join(dir, 'phone-status.json'), 'ERREUR ' + e.message); }
+  // Notifications : faux serveur ntfy + une session qui bosse, attend, rebosse puis termine.
+  const got = [];
+  const ntfy = require('http').createServer((req, res) => {
+    let b = ''; req.on('data', (d) => { b += d; }).on('end', () => { try { got.push(JSON.parse(b)); } catch {} res.end('{}'); });
+  });
+  await new Promise((r) => ntfy.listen(0, '127.0.0.1', r));
+  state().phone.push.server = 'http://127.0.0.1:' + ntfy.address().port;
+  const sfile = path.join(paths.sessionsDir, 'test-push.json');
+  const setSession = (status) => fs.writeFileSync(sfile, JSON.stringify({
+    sessionID: 'test-push', cwd: 'C:\jeux\Pizza Tycoon', status, pid: process.pid,
+    startedAt: new Date().toISOString(), updatedAt: new Date().toISOString(), statusChangedAt: new Date().toISOString(),
+    lastAnswer: { excerpt: 'SECRET : le mot de passe est 1234.', at: new Date().toISOString() },
+  }));
+  for (const st of ['working', 'waiting', 'working', 'done']) { setSession(st); await wait(3200); }
+  const t = await pushService.test();
+  fs.writeFileSync(path.join(dir, 'push-received.json'), JSON.stringify({ test: t, recus: got }, null, 1));
+  ntfy.close();
+  try { fs.unlinkSync(sfile); } catch {}
   openWelcome();
   await wait(1500);
   await shot(welcome, 'welcome.png');
@@ -207,6 +249,7 @@ app.on('window-all-closed', (e) => e.preventDefault?.());
 app.on('before-quit', () => {
   quitting = true;
   stateStore.saveNow();
+  phoneServer?.stop();
   for (const t of terminals.values()) try { t.pty.kill(); } catch {}
 });
 app.on('will-quit', () => globalShortcut.unregisterAll());
@@ -492,9 +535,10 @@ ipcMain.handle('state:update', (_e, patch) => {
   // Le Hub envoie ses changements (thèmes, ordre, projets, sons…).
   const s = state();
   for (const [k, v] of Object.entries(patch)) {
-    if (['hub', 'sounds', 'widget', 'notifications', 'telegram', 'team'].includes(k)) Object.assign(s[k], v);
+    if (['hub', 'sounds', 'widget', 'notifications', 'telegram', 'team', 'phone'].includes(k)) Object.assign(s[k], v);
   }
   if (patch.team) writeTeamConfig();
+  if (patch.phone && phoneServer) phoneServer.sync();
   stateStore.save();
   broadcast('settings', s);
   return s;
@@ -719,6 +763,41 @@ const teamRuntime = () => ({
   electron: process.execPath,
   mcpScript: paths.teamMcp,
   hookScript: paths.teamHook,
+});
+
+// Widget du téléphone.
+ipcMain.handle('phone:info', () => (phoneServer ? phoneServer.info() : null));
+ipcMain.handle('phone:toggle', (_e, on) => {
+  state().phone.enabled = !!on;
+  if (on && !state().phone.token) phoneServer.newToken();
+  stateStore.save();
+  phoneServer.sync();
+  broadcast('settings', state());
+  return phoneServer.info();
+});
+ipcMain.handle('phone:script', () => {
+  try { return fs.readFileSync(path.join(ROOT, 'phone', 'cube-widget-iphone.js'), 'utf8'); } catch { return null; }
+});
+ipcMain.handle('push:info', () => pushService.info());
+ipcMain.handle('push:set', (_e, patch) => {
+  const c = state().phone.push;
+  if ('enabled' in patch) c.enabled = !!patch.enabled;
+  if ('details' in patch) c.details = !!patch.details;
+  if ('server' in patch) {
+    const v = String(patch.server || '').trim().replace(/\/+$/, '');
+    if (/^https?:\/\/[^\s/]+/i.test(v)) c.server = v;
+  }
+  if (c.enabled && !c.topic) pushService.newTopic();
+  stateStore.save();
+  broadcast('settings', state());
+  return pushService.info();
+});
+ipcMain.handle('push:regen', () => { pushService.newTopic(); broadcast('settings', state()); return pushService.info(); });
+ipcMain.handle('push:test', () => pushService.test());
+ipcMain.handle('phone:regen', () => {
+  phoneServer.newToken();
+  broadcast('settings', state());
+  return phoneServer.info();
 });
 
 ipcMain.handle('team:detect', async () => {

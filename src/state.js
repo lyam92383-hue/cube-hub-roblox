@@ -14,6 +14,8 @@ const defaults = () => ({
     events: { waiting: true, done: true, task: true },
     commands: { enabled: false, allowed: {} },
   },
+  // Widget du téléphone : serveur local en lecture seule, désactivé par défaut.
+  phone: { enabled: false, port: 47821, token: '', push: { enabled: false, server: 'https://ntfy.sh', topic: '', details: false } },
   // V2 : l'équipe IA des projets Roblox.
   team: {
     vault: path.join(os.homedir(), 'Documents', 'Cerveau Roblox'),

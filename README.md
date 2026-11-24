@@ -23,6 +23,11 @@ npx electron .
 
 Au premier lancement, Cube Hub ouvre l'écran **Connexion de l'équipe** : tu te connectes à **ton compte Claude Code** et à **ton compte Codex** (ChatGPT / OpenAI). Chaque bouton ouvre la commande officielle (installation, puis connexion dans ton navigateur) ; Cube Hub ne voit jamais tes mots de passe et vérifie seulement que c'est fait. Tu peux y revenir dans Réglages → Équipe IA.
 
+## Sur ton téléphone (Réglages → Téléphone)
+
+- **🔔 Notifications** : quand une session **attend ta réponse** ou **termine**, ton iPhone reçoit une notification, même loin du PC. Elles passent par **ntfy** (appli gratuite, serveur ntfy.sh ou le tien) : installe ntfy, abonne-toi au sujet secret affiché dans Cube Hub. Par défaut seul le nom du projet part, jamais le contenu.
+- **🧊 Widget des sessions** (écran d'accueil ou verrouillé) avec l'appli **Scriptable** : `phone/cube-widget-iphone.js` montre l'état de chaque session (bleu : bosse, orange : attend ta réponse, vert : terminé), la durée et les tokens. Cube Hub ouvre pour cela un petit serveur en lecture seule, **désactivé par défaut** et protégé par un code secret. Avec **Tailscale** (gratuit), il marche partout et n'est pas visible sur ton Wi-Fi. iOS rafraîchit les widgets à son rythme : ce n'est pas en direct à la seconde.
+
 ## Créer un jeu
 
 Bouton **Nouveau jeu Roblox** (ou Ctrl+N) : nom, genre, pitch. Cube Hub crée :
@@ -64,6 +69,7 @@ Les réglages de Codex et du LLM s'appliquent tout de suite (le serveur MCP reli
 - `src/team/scaffold.js` — création du projet Roblox et du cerveau
 - `src/team/detect.js` — détection des outils
 - `src/team/activity.js` — lecture du journal de l'équipe (`~/.cube-widget/equipe/<projet>.jsonl`)
+- `src/phone.js`, `src/push.js`, `src/renderer/phone.js`, `phone/cube-widget-iphone.js` — serveur du widget, notifications ntfy, page Téléphone et widget iPhone
 - `src/renderer/team.js`, `team.css` — onglets, panneau Équipe, assistant, réglages
 
 ## Inspiration et crédits
