@@ -889,7 +889,7 @@ function renderSettings() {
   const el = $('settingsPage');
   ({
     general: pageGeneral, widget: pageWidget, sounds: pageSounds, notifications: pageNotifications,
-    telegram: pageTelegram, hub: pageHub, about: pageAbout, team: (x) => pageTeam(x, renderSettings), phone: (x) => pagePhone(x, renderSettings, toast),
+    telegram: pageTelegram, hub: pageHub, about: pageAbout, team: (x) => pageTeam(x, renderSettings), phone: (x) => pagePhone(x, renderSettings, toast, () => settings),
   })[page](el);
 }
 

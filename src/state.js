@@ -15,7 +15,11 @@ const defaults = () => ({
     commands: { enabled: false, allowed: {} },
   },
   // Widget du téléphone : serveur local en lecture seule, désactivé par défaut.
-  phone: { enabled: false, port: 47821, token: '', push: { enabled: false, server: 'https://ntfy.sh', topic: '', details: false } },
+  phone: {
+    enabled: false, port: 47821, token: '',
+    app: { enabled: false, allowed: {} }, // appli web : voir les sessions, et répondre projet par projet
+    push: { enabled: false, provider: 'discord', webhook: '', server: 'https://ntfy.sh', topic: '', details: false },
+  },
   // V2 : l'équipe IA des projets Roblox.
   team: {
     vault: path.join(os.homedir(), 'Documents', 'Cerveau Roblox'),

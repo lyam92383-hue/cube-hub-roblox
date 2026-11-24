@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cube Hub</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon.png">
+<link rel="icon" href="/icon.png">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cube Hub">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<style>
+/* Même apparence que le widget de Cube Hub sur le PC. */
+:root{--card:#000;--border:#3a3a3c;--text:#fff;--muted:#8e8e93;--back-name:#ddd;
+  --working:#6eb4f5;--waiting:#e5671a;--done:#3fbf6e;--radius:18px;color-scheme:dark}
+@property --angle{syntax:'<angle>';initial-value:0deg;inherits:false}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:#000;color:var(--text);font:16px/1.4 -apple-system,"SF Pro Text",system-ui,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+body{padding:max(14px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-right)) max(28px,env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+.wrap{max-width:520px;margin:0 auto}
+.top{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:13px;margin:2px 4px 14px}
+.top button{background:none;border:0;color:var(--muted);font:inherit;padding:6px 8px;border-radius:10px}
+button{font:inherit;color:inherit;cursor:pointer}
+
+/* carte de devant */
+.stack{position:relative}
+.front{position:relative;z-index:10;min-height:96px;border-radius:var(--radius);background:var(--card);box-shadow:inset 0 0 0 1px var(--border)}
+.front-inner{position:relative;display:flex;align-items:center;gap:14px;min-height:96px;padding:10px 18px 10px 14px;border-radius:var(--radius);overflow:hidden}
+.cube-slot{flex:none;width:74px;height:72px;display:flex;align-items:center;justify-content:center}
+.cube-slot img{width:100%;height:100%;object-fit:contain;display:block}
+.text{min-width:0;flex:1;display:flex;flex-direction:column;gap:3px}
+.name{font-size:18px;font-weight:700;overflow-wrap:anywhere}
+.task{font-size:14px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task:empty{display:none}
+.status{font-size:13px;color:var(--muted)}
+.st-working{color:var(--working)}.st-waiting{color:var(--waiting)}.st-done{color:var(--done)}
+.sep{margin:0 6px}
+
+/* halo : tourne quand ça bosse, fixe sinon */
+.halo{position:absolute;inset:0;pointer-events:none;border-radius:var(--radius)}
+.halo>div{position:absolute;border-radius:calc(var(--radius) + 1px);opacity:0;transition:opacity .4s}
+.halo-run{inset:-1px;padding:2px;background:conic-gradient(from var(--angle),transparent 0deg,transparent 260deg,rgba(110,180,245,.35) 320deg,rgba(150,205,255,.95) 360deg);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;animation:run 2.6s linear infinite}
+.halo-run-glow{inset:-4px;padding:5px;filter:blur(5px);border-radius:calc(var(--radius) + 4px)}
+@keyframes run{to{--angle:360deg}}
+.halo-still{inset:-1px;border:2px solid var(--halo,var(--waiting));box-shadow:0 0 6px 1px var(--halo,var(--waiting)),inset 0 0 4px var(--halo,var(--waiting))}
+.mood-working .halo-run,.mood-working .halo-run-glow{opacity:1}
+.mood-waiting .halo-still{opacity:.55;--halo:var(--waiting)}
+.mood-done .halo-still{opacity:.55;--halo:var(--done)}
+
+/* cartes du dessous */
+.backs{position:relative}
+.back{position:relative;margin-top:-30px;height:58px;padding:30px 18px 0;display:flex;align-items:center;gap:9px;border-radius:var(--radius);background:var(--card);box-shadow:inset 0 0 0 1px var(--border);width:100%;border:0;text-align:left}
+.back .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.back .bname{flex:1;min-width:0;color:var(--back-name);font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.back .bstatus{font-size:13px;flex:none}
+.back:active{background:#0b0b0c}
+
+/* réponse */
+.panel{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+.box{background:var(--card);border-radius:14px;box-shadow:inset 0 0 0 1px var(--border);padding:12px 14px;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.box.q{font-weight:600}
+.choices{display:flex;flex-wrap:wrap;gap:8px}
+.choice{flex:1 1 130px;min-height:48px;padding:12px 14px;text-align:left;background:var(--card);border:0;border-radius:14px;box-shadow:inset 0 0 0 1px var(--border);font-size:15px}
+.choice.yes{box-shadow:inset 0 0 0 1.5px var(--done)}
+.choice.no{box-shadow:inset 0 0 0 1.5px #c0392b}
+.choice:active{background:#111}
+.send{display:flex;gap:8px;align-items:center}
+.send input{flex:1;min-width:0;height:48px;padding:0 16px;background:var(--card);border:0;border-radius:24px;box-shadow:inset 0 0 0 1px var(--border);color:var(--text);font:inherit;outline:none}
+.send input:focus{box-shadow:inset 0 0 0 1.5px var(--c,var(--working))}
+.send button{flex:none;width:48px;height:48px;border:0;border-radius:50%;background:var(--c,var(--working));color:#000;font-size:22px;font-weight:700}
+button:disabled{opacity:.4}
+.msg{font-size:13px;min-height:0;padding:0 4px}.msg:empty{display:none}.ok{color:var(--done)}.err{color:#ff8a80}
+.note{font-size:13px;color:var(--muted);padding:0 4px}
+.banner{margin:0 0 12px;background:#1a1208;border-radius:14px;box-shadow:inset 0 0 0 1px #5a3a18;color:#ffcf99;padding:10px 14px;font-size:13px}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><span id="pc">Cube Hub</span><button id="refresh" type="button">Actualiser</button></div>
+  <div id="banner"></div>
+  <div id="main"></div>
+</div>
+<script>
+(function () {
+  "use strict";
+  var KEY = "cube-hub-code";
+  var COLORS = { working: "#6eb4f5", waiting: "#e5671a", done: "#3fbf6e" };
+  var LONG = { working: "bosse", waiting: "attend ta réponse", done: "terminé" };
+  var SHORT = { working: "bosse", waiting: "attend", done: "terminé" };
+  var ORDER = { waiting: 0, working: 1, done: 2 };
+  var GRADIENTS = { orange: [0x2a1a10, 0xe5671a, 0xffe2c8], green: [0x0e2416, 0x3fbf6e, 0xddf7e6] };
+  var LONG_FRAMES = { 1: 1000, 11: 1000, 21: 1000, 4: 500, 14: 500 }; // mêmes durées que sur le PC
+  var token = null, busy = false, selected = null, lastKey = "", renderId = 0, cubeTimer = null;
+  var notes = {};
+
+  // Le code arrive dans le fragment (#t=…) : il n'est jamais envoyé au serveur dans l'adresse.
+  (function () {
+    var m = /[#&]t=([0-9a-f]+)/i.exec(location.hash);
+    if (m) { try { localStorage.setItem(KEY, m[1]); } catch (e) {} history.replaceState(null, "", location.pathname); }
+    try { token = localStorage.getItem(KEY); } catch (e) {}
+  })();
+
+  function el(tag, cls, text) { var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function api(path, body) {
+    var opt = { headers: { Authorization: "Bearer " + token }, cache: "no-store" };
+    if (body) { opt.method = "POST"; opt.headers["Content-Type"] = "application/json"; opt.body = JSON.stringify(body); }
+    return fetch(path, opt).then(function (r) { return r.json().then(function (j) { return { code: r.status, body: j }; }); });
+  }
+  function since(iso) {
+    var t = Date.parse(iso); if (!t) return "";
+    var min = Math.max(0, Math.floor((Date.now() - t) / 60000));
+    if (min < 1) return "à l'instant"; if (min < 60) return min + " min";
+    var h = Math.floor(min / 60); return h < 24 ? h + " h " + String(min % 60).padStart(2, "0") : Math.floor(h / 24) + " j";
+  }
+  function tokens(n) { return !n ? "" : n >= 1e6 ? (n / 1e6).toFixed(1).replace(".", ",") + "M tokens" : n >= 1000 ? Math.round(n / 1000) + "k tokens" : n + " tokens"; }
+
+  // ---------------------------------------------------------- le cube (images du widget du PC)
+  var index = null, imgs = {}, tinted = {};
+  function loadImg(src) {
+    if (imgs[src]) return imgs[src];
+    imgs[src] = new Promise(function (ok, ko) { var i = new Image(); i.onload = function () { ok(i); }; i.onerror = ko; i.src = src; });
+    return imgs[src];
+  }
+  function frames() {
+    if (index) return Promise.resolve(index);
+    return fetch("/frames/index.json").then(function (r) { return r.json(); }).then(function (j) { index = j.card; return index; });
+  }
+  function table(stops) {
+    var rgb = function (h) { return [(h >> 16) & 255, (h >> 8) & 255, h & 255]; }, d = rgb(stops[0]), m = rgb(stops[1]), l = rgb(stops[2]), out = [], i, t;
+    var mix = function (a, b, k) { return a.map(function (v, n) { return v + (b[n] - v) * k; }); };
+    for (i = 0; i < 256; i++) { t = i / 255; out.push(t < 0.5 ? mix(d, m, t * 2) : mix(m, l, (t - 0.5) * 2)); }
+    return out;
+  }
+  var tables = { orange: table(GRADIENTS.orange), green: table(GRADIENTS.green) };
+  function tint(img, name, key) {
+    if (tinted[key]) return tinted[key];
+    var c = document.createElement("canvas"); c.width = img.naturalWidth; c.height = img.naturalHeight;
+    var x = c.getContext("2d"); x.drawImage(img, 0, 0);
+    var data = x.getImageData(0, 0, c.width, c.height), px = data.data, tb = tables[name], i, g, v;
+    for (i = 0; i < px.length; i += 4) {
+      if (px[i + 3] === 0) continue;
+      g = Math.min(1, Math.max(0, (0.2126 * px[i] + 0.7152 * px[i + 1] + 0.0722 * px[i + 2]) / 255)); v = tb[Math.round(g * 255)];
+      px[i] = v[0]; px[i + 1] = v[1]; px[i + 2] = v[2];
+    }
+    x.putImageData(data, 0, 0); tinted[key] = c.toDataURL("image/png"); return tinted[key];
+  }
+  function cube(imgEl, status) {
+    clearTimeout(cubeTimer); var id = renderId;
+    frames().then(function (idx) {
+      if (status === "working") {
+        return Promise.all(idx.Travail.map(function (f) { return loadImg("/frames/card/Travail/" + f); })).then(function (list) {
+          var i = 0;
+          (function step() {
+            if (id !== renderId) return;
+            imgEl.src = list[i].src; var ms = LONG_FRAMES[i + 1] || 90; i = (i + 1) % list.length; cubeTimer = setTimeout(step, ms);
+          })();
+        });
+      }
+      if (status === "waiting" || status === "done") {
+        return loadImg("/frames/card/Travail/" + idx.Travail[0]).then(function (img) { if (id === renderId) imgEl.src = tint(img, status === "waiting" ? "orange" : "green", status); });
+      }
+      return loadImg("/frames/card/Sommeil/" + idx.Sommeil[9]).then(function (img) { if (id === renderId) imgEl.src = img.src; });
+    }).catch(function () {});
+  }
+
+  // ---------------------------------------------------------- dessin
+  function flash(node, text, ok) { node.className = "msg " + (ok ? "ok" : "err"); node.textContent = text; }
+  function note(id, node, text, ok) { notes[id] = { text: text, ok: ok, until: Date.now() + 8000 }; flash(node, text, ok); }
+
+  function front(s) {
+    var f = el("div", "front mood-" + (s ? s.status : "sleeping"));
+    var halo = el("div", "halo"); ["halo-run", "halo-run halo-run-glow", "halo-still"].forEach(function (c) { halo.appendChild(el("div", c)); });
+    var inner = el("div", "front-inner"), slot = el("div", "cube-slot"), im = el("img"); im.alt = ""; im.draggable = false; slot.appendChild(im);
+    var t = el("div", "text");
+    if (s) {
+      t.appendChild(el("div", "name", s.name));
+      t.appendChild(el("div", "task", s.task || ""));
+      var st = el("div", "status"); st.appendChild(el("span", "st-" + s.status, LONG[s.status] || s.status));
+      var rest = since(s.since) + (s.tokens ? " · " + tokens(s.tokens) : "");
+      if (rest) { st.appendChild(el("span", "sep", "·")); st.appendChild(document.createTextNode(rest)); }
+      t.appendChild(st);
+    } else { t.appendChild(el("div", "name", "Cube Hub")); t.appendChild(el("div", "task", "Aucune session ouverte")); t.appendChild(el("div", "status", "en veille")); }
+    inner.appendChild(slot); inner.appendChild(t); f.appendChild(halo); f.appendChild(inner);
+    cube(im, s ? s.status : "sleeping");
+    return f;
+  }
+
+  function panel(s) {
+    var p = el("div", "panel"), msg = el("div", "msg");
+    var n = notes[s.id]; if (n && Date.now() < n.until) flash(msg, n.text, n.ok);
+    if (s.permission) {
+      p.appendChild(el("div", "box", "🔐 " + s.permission.tool + (s.permission.detail ? "\n" + s.permission.detail : "")));
+      var row = el("div", "choices");
+      [["yes", "Oui", "choice yes"], ["no", "Non", "choice no"]].forEach(function (x) {
+        var b = el("button", x[2], x[1]); b.type = "button"; b.disabled = !s.canReply;
+        b.onclick = function () { send("/api/answer", { id: s.id, kind: "p", value: x[0] }, msg); };
+        row.appendChild(b);
+      });
+      p.appendChild(row);
+    } else if (s.question) {
+      p.appendChild(el("div", "box q", "❓ " + s.question.question));
+      var opts = el("div", "choices");
+      s.question.options.forEach(function (o, i) {
+        var b = el("button", "choice", (i + 1) + ". " + o); b.type = "button"; b.disabled = !s.canReply;
+        b.onclick = function () { send("/api/answer", { id: s.id, kind: "q", value: i }, msg); };
+        opts.appendChild(b);
+      });
+      p.appendChild(opts);
+    } else if (s.answer) {
+      p.appendChild(el("div", "box", s.answer));
+    }
+    if (s.canReply) {
+      var form = el("form", "send"), input = el("input"), go = el("button", null, "↑");
+      input.placeholder = "Répondre à Claude…"; input.maxLength = 1000; input.setAttribute("enterkeyhint", "send"); input.setAttribute("autocomplete", "off");
+      go.type = "submit"; go.setAttribute("aria-label", "Envoyer"); form.style.setProperty("--c", COLORS[s.status] || COLORS.working);
+      form.onsubmit = function (e) { e.preventDefault(); var text = input.value.trim(); if (!text) return; send("/api/reply", { id: s.id, text: text }, msg, function () { input.value = ""; }); };
+      form.appendChild(input); form.appendChild(go); p.appendChild(form);
+    } else if (s.whyNot) {
+      p.appendChild(el("div", "note", "Réponse impossible : " + s.whyNot + "."));
+    }
+    p.appendChild(msg);
+    return p;
+  }
+
+  function send(path, body, msgNode, after) {
+    if (busy) return; busy = true; note(body.id, msgNode, "Envoi…", true);
+    api(path, body).then(function (r) {
+      busy = false;
+      if (r.code === 200) { note(body.id, msgNode, "✓ " + (r.body.label || "Envoyé"), true); if (after) after(); setTimeout(load, 1200); }
+      else note(body.id, msgNode, r.body.error || "Erreur " + r.code, false);
+    }).catch(function () { busy = false; note(body.id, msgNode, "PC injoignable", false); });
+  }
+
+  function show(data) {
+    var main = document.getElementById("main"), b = document.getElementById("banner");
+    b.textContent = ""; if (!data.replyReady) b.appendChild(el("div", "banner", "Pour répondre depuis le téléphone, Tailscale doit être actif sur ce PC. Tu peux seulement regarder."));
+    document.getElementById("pc").textContent = data.pc || "Cube Hub";
+    // Ne pas écraser ce que tu es en train de taper.
+    if (main.contains(document.activeElement) && document.activeElement.tagName === "INPUT" && document.activeElement.value) return;
+    renderId++; main.textContent = "";
+    var list = data.sessions.slice().sort(function (a, b) { return (ORDER[a.status] - ORDER[b.status]) || (Date.parse(b.since) - Date.parse(a.since)); });
+    var cur = list.filter(function (s) { return s.id === selected; })[0] || list[0] || null;
+    var stack = el("div", "stack"); stack.appendChild(front(cur));
+    var backs = el("div", "backs");
+    list.filter(function (s) { return s !== cur; }).forEach(function (s, i) {
+      var r = el("button", "back"); r.type = "button"; r.style.zIndex = String(9 - i); // comme sur le PC : la première carte est au-dessus
+      var dot = el("span", "dot"); dot.style.background = COLORS[s.status] || "#8e8e93";
+      r.appendChild(dot); r.appendChild(el("span", "bname", s.name));
+      var st = el("span", "bstatus", SHORT[s.status] || ""); st.style.color = COLORS[s.status]; r.appendChild(st);
+      r.onclick = function () { selected = s.id; lastKey = ""; show(data); };
+      backs.appendChild(r);
+    });
+    stack.appendChild(backs); main.appendChild(stack);
+    if (cur) main.appendChild(panel(cur));
+  }
+
+  function fail(text) { var m = document.getElementById("main"); renderId++; m.textContent = ""; m.appendChild(el("div", "empty err", text)); }
+
+  function load() {
+    if (!token) return fail("Ouvre le lien copié depuis Cube Hub (Réglages → Téléphone → Copier le lien de l'appli).");
+    api("/api/app").then(function (r) {
+      if (r.code === 401) return fail("Code refusé : recopie le lien depuis Cube Hub.");
+      if (r.code === 429) return fail("Trop d'essais : réessaie dans une minute.");
+      if (r.code === 403) return fail(r.body.error);
+      if (r.code !== 200) return fail("Erreur " + r.code);
+      var key = JSON.stringify(r.body.sessions) + r.body.replyReady + selected + Math.floor(Date.now() / 60000);
+      if (key === lastKey) return; // rien n'a changé : on ne redessine pas
+      lastKey = key; document.getElementById("banner").textContent = ""; show(r.body);
+    }).catch(function () { fail("PC injoignable : Cube Hub est-il ouvert ? Tailscale est-il actif ?"); });
+  }
+
+  document.getElementById("refresh").onclick = function () { lastKey = ""; load(); };
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) load(); });
+  setInterval(function () { if (!document.hidden) load(); }, 6000);
+  load();
+})();
+</script>
+</body>
+</html>

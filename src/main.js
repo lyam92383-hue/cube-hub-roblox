@@ -80,9 +80,16 @@ app.whenReady().then(() => {
     if (hub && !hub.isDestroyed()) hub.webContents.send('team:events', { projectId, events });
   });
   activity.start();
-  phoneServer = new PhoneServer({ sessions: () => sessions, settings: state, save: () => stateStore.save(), log: console.error });
+  phoneServer = new PhoneServer({
+    sessions: () => sessions,
+    terminal: (projectId) => {
+      const t = terminals.get(projectId);
+      if (!t || !t.running) return null;
+      return { write: (s) => t.pty.write(s), tail: () => t.buffer.slice(-6000) };
+    },
+    settings: state, save: () => stateStore.save(), log: console.error });
   phoneServer.sync();
-  pushService = new Push({ settings: state, save: () => stateStore.save(), log: console.error });
+  pushService = new Push({ settings: state, save: () => stateStore.save(), appUrl: () => (state().phone.app.enabled ? phoneServer.info().appUrl : ''), log: console.error });
   ensureStartMenuShortcut();
   createTray();
   createWidget();
@@ -207,7 +214,8 @@ async function snapshots(dir) {
   state().phone.enabled = true;
   phoneServer.sync();
   state().phone.push.enabled = true;
-  pushService.newTopic();
+  state().phone.app.enabled = true;
+  state().phone.app.allowed[state().hub.projects[0]?.id || 'x'] = true;
   await wait(600);
   hub.webContents.send('hub:command', { settings: true, settingsPage: 'phone' });
   await wait(2500);
@@ -225,6 +233,8 @@ async function snapshots(dir) {
     let b = ''; req.on('data', (d) => { b += d; }).on('end', () => { try { got.push(JSON.parse(b)); } catch {} res.end('{}'); });
   });
   await new Promise((r) => ntfy.listen(0, '127.0.0.1', r));
+  state().phone.push.provider = 'ntfy';
+  pushService.newTopic();
   state().phone.push.server = 'http://127.0.0.1:' + ntfy.address().port;
   const sfile = path.join(paths.sessionsDir, 'test-push.json');
   const setSession = (status) => fs.writeFileSync(sfile, JSON.stringify({
@@ -775,6 +785,18 @@ ipcMain.handle('phone:toggle', (_e, on) => {
   broadcast('settings', state());
   return phoneServer.info();
 });
+// Appli web : voir les sessions et répondre (projet par projet, désactivée par défaut).
+ipcMain.handle('phone:app-set', (_e, patch) => {
+  const a = state().phone.app;
+  if ('enabled' in patch) a.enabled = !!patch.enabled;
+  if (patch.allow && typeof patch.allow.id === 'string') {
+    if (patch.allow.on) a.allowed[patch.allow.id] = true;
+    else delete a.allowed[patch.allow.id];
+  }
+  stateStore.save();
+  broadcast('settings', state());
+  return phoneServer.info();
+});
 ipcMain.handle('phone:script', () => {
   try { return fs.readFileSync(path.join(ROOT, 'phone', 'cube-widget-iphone.js'), 'utf8'); } catch { return null; }
 });
@@ -783,11 +805,17 @@ ipcMain.handle('push:set', (_e, patch) => {
   const c = state().phone.push;
   if ('enabled' in patch) c.enabled = !!patch.enabled;
   if ('details' in patch) c.details = !!patch.details;
+  if (patch.provider === 'discord' || patch.provider === 'ntfy') c.provider = patch.provider;
+  if ('webhook' in patch) {
+    const v = String(patch.webhook || '').trim();
+    if (v === '' || Push.validWebhook(v)) c.webhook = v;
+    else return { ...pushService.info(), error: "Cette adresse n'est pas un webhook Discord (https://discord.com/api/webhooks/…)." };
+  }
   if ('server' in patch) {
     const v = String(patch.server || '').trim().replace(/\/+$/, '');
     if (/^https?:\/\/[^\s/]+/i.test(v)) c.server = v;
   }
-  if (c.enabled && !c.topic) pushService.newTopic();
+  if (c.enabled && c.provider === 'ntfy' && !c.topic) pushService.newTopic();
   stateStore.save();
   broadcast('settings', state());
   return pushService.info();

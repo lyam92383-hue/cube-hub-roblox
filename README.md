@@ -25,8 +25,13 @@ Au premier lancement, Cube Hub ouvre l'écran **Connexion de l'équipe** : tu te
 
 ## Sur ton téléphone (Réglages → Téléphone)
 
-- **🔔 Notifications** : quand une session **attend ta réponse** ou **termine**, ton iPhone reçoit une notification, même loin du PC. Elles passent par **ntfy** (appli gratuite, serveur ntfy.sh ou le tien) : installe ntfy, abonne-toi au sujet secret affiché dans Cube Hub. Par défaut seul le nom du projet part, jamais le contenu.
-- **🧊 Widget des sessions** (écran d'accueil ou verrouillé) avec l'appli **Scriptable** : `phone/cube-widget-iphone.js` montre l'état de chaque session (bleu : bosse, orange : attend ta réponse, vert : terminé), la durée et les tokens. Cube Hub ouvre pour cela un petit serveur en lecture seule, **désactivé par défaut** et protégé par un code secret. Avec **Tailscale** (gratuit), il marche partout et n'est pas visible sur ton Wi-Fi. iOS rafraîchit les widgets à son rythme : ce n'est pas en direct à la seconde.
+Tout est désactivé par défaut et protégé par un code secret.
+
+- **🔔 Notifications** : quand une session **attend ta réponse** ou **termine**, ton téléphone reçoit une notification. Au choix **Discord** (un webhook dans un salon privé, fiable sur iPhone) ou **ntfy**. Par défaut seul le nom du projet part, jamais le contenu.
+- **📱 Appli web** : une petite appli privée servie par ton PC, avec le même look que le widget de Cube Hub (carte noire, vrai cube, halo, cartes empilées). Tu y vois tes sessions, tu réponds à Claude et tu valides une permission. Ajoute-la à l'écran d'accueil (Safari → Partager → Sur l'écran d'accueil). Répondre est **autorisé projet par projet**, seulement pour les sessions lancées dans Cube Hub, **seulement avec Tailscale** (sinon lecture seule), limité à 5 réponses par minute, et les messages commençant par `!`, `/` ou `#` sont refusés.
+- **🧊 Widget iPhone** (écran d'accueil ou verrouillé) avec l'appli **Scriptable** : `phone/cube-widget-iphone.js` montre l'état de chaque session (bleu : bosse, orange : attend ta réponse, vert : terminé), la durée et les tokens. Toucher le widget ouvre l'appli web. iOS rafraîchit les widgets à son rythme : ce n'est pas en direct à la seconde. Sur l'écran verrouillé d'iOS, seuls de petits widgets sont possibles (pas la grande carte).
+
+Avec **Tailscale** (gratuit), l'appli et le widget marchent partout et ne sont pas visibles sur ton Wi-Fi.
 
 ## Créer un jeu
 
@@ -69,7 +74,7 @@ Les réglages de Codex et du LLM s'appliquent tout de suite (le serveur MCP reli
 - `src/team/scaffold.js` — création du projet Roblox et du cerveau
 - `src/team/detect.js` — détection des outils
 - `src/team/activity.js` — lecture du journal de l'équipe (`~/.cube-widget/equipe/<projet>.jsonl`)
-- `src/phone.js`, `src/push.js`, `src/renderer/phone.js`, `phone/cube-widget-iphone.js` — serveur du widget, notifications ntfy, page Téléphone et widget iPhone
+- `src/phone.js`, `src/phone-app.html`, `src/push.js`, `src/renderer/phone.js`, `phone/cube-widget-iphone.js` — serveur du téléphone, appli web, notifications Discord / ntfy, page Téléphone et widget iPhone
 - `src/renderer/team.js`, `team.css` — onglets, panneau Équipe, assistant, réglages
 
 ## Inspiration et crédits

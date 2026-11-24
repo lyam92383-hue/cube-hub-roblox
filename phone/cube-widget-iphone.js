@@ -81,7 +81,7 @@ async function charger() {
 // ---------------------------------------------------------------- dessin
 
 // Le cube : carré de la couleur de l'état, avec ses deux yeux.
-function cube(etat) {
+function cube(etat, mono) {
   const d = new DrawContext();
   d.size = new Size(120, 120);
   d.opaque = false;
@@ -89,7 +89,8 @@ function cube(etat) {
   const p = new Path();
   p.addRoundedRect(new Rect(0, 0, 120, 120), 30, 30);
   d.addPath(p);
-  d.setFillColor(new Color(COULEURS[etat] || COULEURS.idle, 0.92));
+  // Écran verrouillé : iOS n'affiche qu'une teinte, le cube est donc blanc.
+  d.setFillColor(mono ? Color.white() : new Color(COULEURS[etat] || COULEURS.idle, 0.92));
   d.fillPath();
   d.setFillColor(FOND);
   for (const x of [41, 69]) {
@@ -129,14 +130,22 @@ function ecranVerrouille(w, taille, haut, sessions, maintenant, horsLigne) {
     img.imageSize = new Size(26, 26);
     img.centerAlignImage();
   } else {
-    const a = w.addText(haut ? haut.name : "Cube Hub");
+    // Comme le panneau de Cube Hub sur le PC : le cube à gauche, puis le nom, l'état et les tokens.
+    const ligne = w.addStack();
+    ligne.centerAlignContent();
+    const ic = ligne.addImage(cube(etat, true));
+    ic.imageSize = new Size(38, 38);
+    ligne.addSpacer(8);
+    const col = ligne.addStack();
+    col.layoutVertically();
+    const a = col.addText(haut ? haut.name : "Cube Hub");
     a.font = Font.boldSystemFont(14);
     a.lineLimit = 1;
-    const b = w.addText(haut ? LONG[etat] + " · " + duree(haut.since, maintenant) : "aucune session");
+    const b = col.addText(haut ? LONG[etat] + " · " + duree(haut.since, maintenant) : "aucune session");
     b.font = Font.systemFont(12);
     b.lineLimit = 1;
     const reste = [haut ? jetons(haut.tokens) : "", sessions.length > 1 ? sessions.length + " sessions" : "", horsLigne ? "hors ligne" : ""].filter(Boolean);
-    if (reste.length) { const c = w.addText(reste.join(" · ")); c.font = Font.systemFont(11); c.lineLimit = 1; c.textOpacity = 0.7; }
+    if (reste.length) { const c = col.addText(reste.join(" · ")); c.font = Font.systemFont(11); c.lineLimit = 1; c.textOpacity = 0.7; }
   }
 }
 
@@ -220,6 +229,11 @@ async function construire() {
   const taille = config.widgetFamily || "medium";
   const w = new ListWidget();
   w.refreshAfterDate = new Date(Date.now() + 5 * 60000); // iOS décide du vrai rythme
+  // Toucher le widget ouvre l'appli web de Cube Hub (pour voir en détail et répondre).
+  if (Keychain.contains(CLE)) {
+    const u = /^(https?:\/\/[^/]+)\/.*[?&]t=([0-9a-f]+)/i.exec(Keychain.get(CLE));
+    if (u) w.url = u[1] + "/app#t=" + u[2];
+  }
   const { data, erreur, horsLigne } = await charger();
 
   if (erreur) {
