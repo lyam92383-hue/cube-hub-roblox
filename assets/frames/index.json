@@ -1,0 +1,88 @@
+{
+  "card": {
+    "Travail": [
+      "01_centre.png",
+      "02_vers_gauche_1.png",
+      "03_vers_gauche_2.png",
+      "04_regard_gauche.png",
+      "05_retour_gauche_1.png",
+      "06_retour_centre.png",
+      "07_clignement_debut.png",
+      "08_clignement_fin.png",
+      "09_yeux_fermes.png",
+      "10_reouverture.png",
+      "11_yeux_ouverts.png",
+      "12_vers_droite_1.png",
+      "13_vers_droite_2.png",
+      "14_regard_droite.png",
+      "15_retour_droite_1.png",
+      "16_retour_centre.png",
+      "17_clignement_debut.png",
+      "18_clignement_fin.png",
+      "19_yeux_fermes.png",
+      "20_reouverture.png",
+      "21_fin_centre.png"
+    ],
+    "Sommeil": [
+      "01_somnolent.png",
+      "02_mi_clos.png",
+      "03_lutte.png",
+      "04_mi_clos_2.png",
+      "05_presque_ferme.png",
+      "06_ferme.png",
+      "07_tasse.png",
+      "08_eteint_1.png",
+      "09_eteint_2.png",
+      "10_dort.png",
+      "11_respire_in.png",
+      "12_respire_out.png"
+    ],
+    "Regard": [
+      "cube_sans_yeux.png",
+      "oeil.png"
+    ]
+  },
+  "menubar": {
+    "Travail": [
+      "01_centre.png",
+      "02_vers_gauche_1.png",
+      "03_vers_gauche_2.png",
+      "04_regard_gauche.png",
+      "05_retour_gauche_1.png",
+      "06_retour_centre.png",
+      "07_clignement_debut.png",
+      "08_clignement_fin.png",
+      "09_yeux_fermes.png",
+      "10_reouverture.png",
+      "11_yeux_ouverts.png",
+      "12_vers_droite_1.png",
+      "13_vers_droite_2.png",
+      "14_regard_droite.png",
+      "15_retour_droite_1.png",
+      "16_retour_centre.png",
+      "17_clignement_debut.png",
+      "18_clignement_fin.png",
+      "19_yeux_fermes.png",
+      "20_reouverture.png",
+      "21_fin_centre.png"
+    ],
+    "Sommeil": [
+      "01_somnolent.png",
+      "02_mi_clos.png",
+      "03_lutte.png",
+      "04_mi_clos_2.png",
+      "05_presque_ferme.png",
+      "06_ferme.png",
+      "07_tasse.png",
+      "08_eteint_1.png",
+      "09_eteint_2.png",
+      "10_dort.png",
+      "11_respire_in.png",
+      "12_respire_out.png"
+    ],
+    "Regard": [
+      "cube_sans_yeux.png",
+      "oeil.png"
+    ]
+  }
+}

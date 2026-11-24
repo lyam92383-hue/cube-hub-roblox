@@ -1,0 +1,160 @@
+:root {
+  --card: #000;
+  --border: #3a3a3c;
+  --text: #fff;
+  --muted: #8e8e93;
+  --back-name: #dddddd;
+  --working: #6eb4f5;
+  --waiting: #e5671a;
+  --done: #3fbf6e;
+  --radius: 18px;
+}
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+html, body {
+  margin: 0;
+  background: transparent;
+  overflow: hidden;
+  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+#root {
+  display: inline-block;
+  padding: 20px;
+}
+.stack {
+  position: relative;
+  width: 360px;
+  transition: width 0.4s cubic-bezier(.3, 1.3, .5, 1);
+  cursor: default;
+}
+.stack.collapsed { width: 84px; }
+
+/* ---------------- Carte de devant */
+.front {
+  position: relative;
+  z-index: 10;
+  height: 84px;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+.front-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 16px 0 12px;
+  gap: 12px;
+  overflow: hidden;
+  border-radius: var(--radius);
+}
+.stack.collapsed .front-inner { padding: 0; justify-content: center; }
+.cube-slot { flex: none; display: flex; align-items: center; justify-content: center; }
+.text {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transition: opacity 0.15s;
+}
+.stack.collapsed .text { opacity: 0; width: 0; flex: 0; overflow: hidden; }
+.name {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.task {
+  color: var(--text);
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.task.completed { color: var(--done); }
+.task:empty { display: none; }
+.status {
+  color: var(--muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.status .sep { margin: 0 6px; }
+.st-working { color: var(--working); }
+.st-waiting { color: var(--waiting); }
+.st-done { color: var(--done); }
+
+/* ---------------- Halo */
+.halo { position: absolute; inset: 0; pointer-events: none; border-radius: var(--radius); }
+.halo > div { position: absolute; border-radius: calc(var(--radius) + 1px); opacity: 0; transition: opacity 0.4s; }
+.halo-run {
+  inset: -1px;
+  padding: 2px;
+  background: conic-gradient(from var(--angle), transparent 0deg, transparent 260deg, rgba(110, 180, 245, 0.35) 320deg, rgba(150, 205, 255, 0.95) 360deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: run 2.6s linear infinite;
+}
+.halo-run-glow { inset: -4px; padding: 5px; filter: blur(5px); border-radius: calc(var(--radius) + 4px); }
+@keyframes run { to { --angle: 360deg; } }
+.halo-still {
+  inset: -1px;
+  border: 2px solid var(--halo-color, var(--waiting));
+  box-shadow: 0 0 6px 1px var(--halo-color, var(--waiting)), inset 0 0 4px var(--halo-color, var(--waiting));
+}
+.halo-entrance {
+  inset: -1px;
+  border: 2px solid rgba(110, 180, 245, 0.95);
+  box-shadow: 0 0 5px rgba(110, 180, 245, 0.9);
+}
+.mood-working .halo-run { opacity: 1; }
+.mood-working .halo-run-glow { opacity: 1; }
+.mood-waiting .halo-still { opacity: 0.45; --halo-color: var(--waiting); }
+.mood-celebrating .halo-still { opacity: 0.75; --halo-color: var(--done); }
+.mood-done .halo-still { opacity: 0.45; --halo-color: var(--done); }
+
+/* ---------------- Cartes du dessous */
+.backs { position: relative; }
+.stack.collapsed .backs { display: none; }
+.back {
+  position: relative;
+  margin-top: -30px;
+  height: 54px;
+  box-sizing: border-box;
+  padding: 30px 16px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: inset 0 0 0 1px var(--border);
+  animation: appear 0.3s ease;
+}
+.back .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+.back .bname {
+  flex: 1;
+  min-width: 0;
+  color: var(--back-name);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.back .bstatus { font-size: 11.5px; flex: none; }
+.back:hover { background: #0b0b0c; }
+.back.jump { animation: card-jump 0.45s ease; }
+.back.jump .dot { animation: dot-swell 0.45s ease; }
+@keyframes card-jump { 0%, 100% { transform: translateY(0); } 40% { transform: translateY(5px); } }
+@keyframes dot-swell { 0%, 100% { transform: scale(1); } 40% { transform: scale(1.8); } }
+@keyframes appear { from { opacity: 0; } to { opacity: 1; } }

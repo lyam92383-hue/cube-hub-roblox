@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' app:; img-src 'self' app: data: blob:; media-src app: data: blob:; style-src 'self' 'unsafe-inline' app:; script-src 'self' app:">
+<title>Cube Hub — widget</title>
+<link rel="stylesheet" href="widget.css">
+</head>
+<body>
+  <div id="root">
+    <div class="stack" id="stack">
+      <div class="front" id="front">
+        <div class="halo" id="halo">
+          <div class="halo-run"></div>
+          <div class="halo-run halo-run-glow"></div>
+          <div class="halo-still"></div>
+          <div class="halo-entrance" id="entrance"></div>
+        </div>
+        <div class="front-inner">
+          <div class="cube-slot" id="cubeSlot"></div>
+          <div class="text" id="text">
+            <div class="name" id="name"></div>
+            <div class="task" id="task"></div>
+            <div class="status" id="status"></div>
+          </div>
+        </div>
+      </div>
+      <div class="backs" id="backs"></div>
+    </div>
+  </div>
+  <script type="module" src="widget.js"></script>
+</body>
+</html>
